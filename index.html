@@ -3,364 +3,298 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Event Check-in</title>
+  <title>NBNU Event Check-in</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,1,0&display=swap" rel="stylesheet" />
+
   <style>
-    :root {
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #111827;
-      --muted: #6b7280;
-      --border: #dbe2ea;
-      --primary: #111827;
-      --primary-text: #ffffff;
-      --secondary: #eef2f7;
-      --secondary-text: #111827;
-      --danger: #fee2e2;
-      --danger-text: #7f1d1d;
-      --success-bg: #ecfdf3;
-      --success-text: #166534;
-      --warn-bg: #fffbeb;
-      --warn-text: #92400e;
-      --error-bg: #fef2f2;
-      --error-text: #991b1b;
-      --info-bg: #eff6ff;
-      --info-text: #1d4ed8;
-      --shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
-      --radius: 18px;
-      --radius-sm: 14px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    body {
-      padding: 16px;
-    }
-
-    .wrap {
-      max-width: 560px;
-      margin: 0 auto;
-      display: grid;
-      gap: 14px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    h1, h2 {
-      margin: 0 0 10px;
-      line-height: 1.2;
-    }
-
-    h1 {
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    h2 {
-      font-size: 17px;
-      font-weight: 800;
-    }
-
-    p {
-      margin: 0;
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    label {
-      display: block;
-      margin-top: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #374151;
-    }
-
-    input,
-    select,
-    button {
-      width: 100%;
-      margin-top: 6px;
-      min-height: 52px;
-      padding: 12px 14px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      font-size: 17px;
-      font-family: inherit;
-    }
-
-    input,
-    select {
-      background: #fff;
-      color: var(--text);
-    }
-
-    button {
-      border: none;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .primary {
-      background: var(--primary);
-      color: var(--primary-text);
-    }
-
-    .secondary {
-      background: var(--secondary);
-      color: var(--secondary-text);
-    }
-
-    .danger {
-      background: var(--danger);
-      color: var(--danger-text);
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .status {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: var(--radius-sm);
-      background: #f9fafb;
-      border: 1px solid var(--border);
-    }
-
-    .status.success {
-      background: var(--success-bg);
-      color: var(--success-text);
-      border-color: #bbf7d0;
-    }
-
-    .status.warn {
-      background: var(--warn-bg);
-      color: var(--warn-text);
-      border-color: #fde68a;
-    }
-
-    .status.error {
-      background: var(--error-bg);
-      color: var(--error-text);
-      border-color: #fecaca;
-    }
-
-    .status.info {
-      background: var(--info-bg);
-      color: var(--info-text);
-      border-color: #bfdbfe;
-    }
-
-    .status-line {
-      font-size: 15px;
-      font-weight: 800;
-    }
-
-    .big {
-      font-size: 24px;
-      font-weight: 900;
-      margin-top: 6px;
-      line-height: 1.15;
-    }
-
-    .meta {
-      margin-top: 6px;
-      font-size: 14px;
-      line-height: 1.4;
-      color: inherit;
-      opacity: 0.95;
-    }
-
-    .helper {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    video {
-      width: 100%;
-      margin-top: 12px;
-      border-radius: var(--radius);
-      background: #000;
-      display: none;
-      overflow: hidden;
-    }
-
-    .results {
-      display: grid;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .result {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      background: #fff;
-    }
-
-    .result-top {
-      display: flex;
-      gap: 10px;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    .result-name {
-      font-weight: 800;
-      font-size: 16px;
-    }
-
-    .result-sub {
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      word-break: break-word;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      border-radius: 999px;
-      padding: 5px 9px;
-      font-size: 12px;
-      font-weight: 800;
-      background: #eef2f7;
-      color: #374151;
-      border: 1px solid #dbe2ea;
-    }
-
-    .pill.ok {
-      background: #dcfce7;
-      color: #166534;
-      border-color: #bbf7d0;
-    }
-
-    .pill.warn {
-      background: #fef3c7;
-      color: #92400e;
-      border-color: #fde68a;
-    }
-
-    .section-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 4px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 800;
-      background: #eef2f7;
-      color: #374151;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    @media (max-width: 480px) {
-      .row {
-        grid-template-columns: 1fr;
-      }
-
-      .result-top {
-        flex-direction: column;
-      }
-    }
+:root {
+  --ds-color-navy: #0E265B;
+  --ds-color-navy-deep: #081839;
+  --ds-color-navy-abyss: #040E24;
+  --ds-color-blue: #516AC7;
+  --ds-color-blue-bright: #3270ED;
+  --ds-color-blue-light: #D1D8F0;
+  --ds-color-blue-pale: #E8ECF8;
+  --ds-color-apricot: #F0BE8F;
+  --ds-color-apricot-dark: #EDA769;
+  --ds-color-apricot-muted: #D4A67A;
+  --ds-color-apricot-pale: #FDF3E8;
+  --ds-color-lavender: #DEADFF;
+  --ds-color-violet: #9900CC;
+  --ds-color-violet-deep: #7700A3;
+  --ds-color-periwinkle: #B8B5FF;
+  --ds-color-periwinkle-pale: #EEEDFF;
+  --ds-color-success: #00CC83;
+  --ds-color-success-deep: #00A86B;
+  --ds-color-success-pale: #E6FAF2;
+  --ds-color-alert: #FF0066;
+  --ds-color-alert-deep: #E6005C;
+  --ds-color-alert-pale: #FFE6F0;
+  --ds-color-warning: #ea736a;
+  --ds-color-warning-deep: #d65f56;
+  --ds-color-warning-pale: #FDF0EF;
+  --ds-color-info: #7DDADE;
+  --ds-color-info-deep: #5FCDD2;
+  --ds-color-info-pale: #E6F8F9;
+  --ds-gradient-primary: linear-gradient(135deg, #3270ED 0%, #9900CC 100%);
+  --ds-gradient-primary-hover: linear-gradient(135deg, #516AC7 0%, #7700A3 100%);
+  --ds-color-grey-950: #06071F;
+  --ds-color-grey-700: #20215C;
+  --ds-color-grey-600: #353673;
+  --ds-color-grey-500: #55579A;
+  --ds-color-grey-400: #8487C5;
+  --ds-color-grey-300: #B8BAE6;
+  --ds-color-grey-200: #D9DAF5;
+  --ds-color-grey-100: #ECECFE;
+  --ds-color-grey-50: #F6F5FF;
+  --ds-color-white: #FFFFFF;
+  --ds-surface-page: var(--ds-color-grey-50);
+  --ds-surface-card: var(--ds-color-white);
+  --ds-surface-inverse: var(--ds-color-navy-deep);
+  --ds-font-display: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ds-font-body: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ds-text-xl: 1.953rem;
+  --ds-text-lg: 1.563rem;
+  --ds-text-md: 1.25rem;
+  --ds-text-base: 1rem;
+  --ds-text-sm: 0.875rem;
+  --ds-text-xs: 0.75rem;
+  --ds-text-2xs: 0.6875rem;
+  --ds-leading-tight: 1.1;
+  --ds-leading-relaxed: 1.65;
+  --ds-tracking-tighter: -0.03em;
+  --ds-tracking-tight: -0.015em;
+  --ds-tracking-wide: 0.04em;
+  --ds-tracking-wider: 0.08em;
+  --ds-tracking-widest: 0.14em;
+  --ds-weight-medium: 500;
+  --ds-weight-bold: 700;
+  --ds-weight-extrabold: 800;
+  --ds-weight-black: 900;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+  --ds-space-6: 1.5rem;
+  --ds-space-8: 2rem;
+  --ds-space-12: 3rem;
+  --ds-radius-surface: 2px;
+  --ds-radius-pill: 100px;
+  --ds-radius-circle: 50%;
+  --ds-border-field: 2px solid var(--ds-color-grey-300);
+  --ds-shadow-2: 0 4px 12px rgba(4,14,36,0.06), 0 2px 4px rgba(4,14,36,0.03);
+  --ds-shadow-btn-default: 0 2px 4px rgba(4,14,36,0.08);
+  --ds-shadow-btn-hover: 0 6px 16px rgba(4,14,36,0.12);
+  --ds-shadow-btn-active: 0 1px 2px rgba(4,14,36,0.10);
+  --ds-glow-blue: 0 0 0 2px #6fa3ff, 0 0 12px 2px rgba(50,112,237,0.5);
+  --ds-glow-apricot: 0 0 0 2px #f8d9b8, 0 0 12px 2px rgba(240,190,143,0.6);
+  --ds-glow-violet: 0 0 0 2px #cc66ff, 0 0 12px 2px rgba(153,0,204,0.5);
+  --ds-glow-success: 0 0 0 2px #66ffbe, 0 0 12px 2px rgba(0,204,131,0.5);
+  --ds-glow-alert: 0 0 0 2px #ff6699, 0 0 12px 2px rgba(255,0,102,0.5);
+  --ds-motion-fast: 120ms;
+  --ds-motion-base: 200ms;
+  --ds-motion-easing: cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--ds-font-body); background: var(--ds-surface-page); color: var(--ds-color-grey-700); line-height: 1.5; min-height: 100vh; padding: var(--ds-space-4); }
+.material-symbols-rounded { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; font-size: 1.25em; line-height: 1; display: inline-block; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+.app { max-width: 640px; margin: 0 auto; display: grid; gap: var(--ds-space-5); }
+.card { background: var(--ds-surface-card); border-radius: var(--ds-radius-surface); box-shadow: var(--ds-shadow-2); overflow: hidden; }
+.card__body { padding: var(--ds-space-6); }
+.hero { background: var(--ds-surface-inverse); color: var(--ds-color-white); }
+.hero__inner { padding: var(--ds-space-8) var(--ds-space-6); display: grid; gap: var(--ds-space-4); }
+.hero__chips { display: flex; flex-wrap: wrap; gap: var(--ds-space-2); align-items: center; }
+.badge { display: inline-flex; align-items: center; gap: var(--ds-space-2); padding: var(--ds-space-2) var(--ds-space-3); border-radius: var(--ds-radius-pill); font-family: var(--ds-font-display); font-weight: var(--ds-weight-extrabold); text-transform: uppercase; letter-spacing: var(--ds-tracking-widest); font-size: var(--ds-text-2xs); line-height: 1; white-space: nowrap; }
+.badge--apricot { background: var(--ds-color-apricot); color: var(--ds-color-navy-deep); }
+.badge--periwinkle { background: var(--ds-color-periwinkle); color: var(--ds-color-navy-deep); }
+.badge--outline-apricot { background: rgba(240,190,143,0.12); border: 1px solid var(--ds-color-apricot); color: var(--ds-color-apricot); }
+.title { font-family: var(--ds-font-display); font-size: var(--ds-text-xl); font-weight: var(--ds-weight-black); line-height: var(--ds-leading-tight); letter-spacing: var(--ds-tracking-tighter); color: var(--ds-color-white); }
+.lead { color: var(--ds-color-periwinkle); font-family: var(--ds-font-body); font-size: var(--ds-text-base); line-height: var(--ds-leading-relaxed); }
+.section-kicker { font-family: var(--ds-font-display); font-size: var(--ds-text-2xs); font-weight: var(--ds-weight-bold); text-transform: uppercase; letter-spacing: var(--ds-tracking-widest); margin-bottom: var(--ds-space-2); }
+.section-title { font-family: var(--ds-font-display); font-size: var(--ds-text-md); font-weight: var(--ds-weight-extrabold); letter-spacing: var(--ds-tracking-tight); color: var(--ds-color-navy-deep); margin-bottom: var(--ds-space-2); }
+.section-copy { color: var(--ds-color-grey-500); font-family: var(--ds-font-body); font-size: var(--ds-text-sm); line-height: var(--ds-leading-relaxed); }
+.totals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ds-space-4); margin-top: var(--ds-space-5); }
+.totals-card--monday { background: var(--ds-color-blue-pale); border-radius: var(--ds-radius-surface); padding: var(--ds-space-5); display: grid; gap: var(--ds-space-3); border-left: 4px solid var(--ds-color-blue-bright); }
+.totals-card--monday .totals-card__kicker { color: var(--ds-color-blue-bright); }
+.totals-card--monday .totals-card__title { color: var(--ds-color-navy-deep); }
+.totals-card--monday .totals-line { color: var(--ds-color-navy); }
+.totals-card--monday .totals-line strong { color: var(--ds-color-blue-bright); }
+.totals-card--tuesday { background: var(--ds-color-periwinkle-pale); border-radius: var(--ds-radius-surface); padding: var(--ds-space-5); display: grid; gap: var(--ds-space-3); border-left: 4px solid var(--ds-color-violet); }
+.totals-card--tuesday .totals-card__kicker { color: var(--ds-color-violet); }
+.totals-card--tuesday .totals-card__title { color: var(--ds-color-navy-deep); }
+.totals-card--tuesday .totals-line { color: var(--ds-color-navy); }
+.totals-card--tuesday .totals-line strong { color: var(--ds-color-violet); }
+.totals-card__kicker { font-family: var(--ds-font-display); font-size: var(--ds-text-2xs); font-weight: var(--ds-weight-bold); text-transform: uppercase; letter-spacing: var(--ds-tracking-widest); }
+.totals-card__title { font-family: var(--ds-font-display); font-size: var(--ds-text-md); font-weight: var(--ds-weight-extrabold); letter-spacing: var(--ds-tracking-tight); }
+.totals-line { font-family: var(--ds-font-body); font-size: var(--ds-text-sm); line-height: var(--ds-leading-relaxed); }
+.totals-line strong { font-weight: var(--ds-weight-bold); }
+label { display: block; margin-top: var(--ds-space-4); font-family: var(--ds-font-display); font-size: var(--ds-text-xs); font-weight: var(--ds-weight-bold); text-transform: uppercase; letter-spacing: var(--ds-tracking-wider); color: var(--ds-color-grey-500); }
+input, select { width: 100%; margin-top: var(--ds-space-2); min-height: 52px; padding: var(--ds-space-3) var(--ds-space-4); border-radius: var(--ds-radius-surface); border: var(--ds-border-field); background: var(--ds-surface-card); color: var(--ds-color-navy-deep); font-family: var(--ds-font-body); font-size: var(--ds-text-base); outline: none; appearance: none; transition: border-color var(--ds-motion-fast) var(--ds-motion-easing), box-shadow var(--ds-motion-fast) var(--ds-motion-easing); }
+input::placeholder { color: var(--ds-color-grey-400); }
+input:focus, select:focus { border-color: var(--ds-color-blue-bright); box-shadow: var(--ds-glow-blue); }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2355579A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right var(--ds-space-4) center; background-size: 20px; padding-right: var(--ds-space-12); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ds-space-3); }
+.btn { appearance: none; border: none; background: none; cursor: pointer; font-family: var(--ds-font-display); font-weight: var(--ds-weight-bold); letter-spacing: var(--ds-tracking-wider); text-transform: uppercase; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: var(--ds-space-2); transition: all var(--ds-motion-base) var(--ds-motion-easing); }
+.btn:focus { outline: none; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn .material-symbols-rounded { font-size: 1.125rem; line-height: 1; }
+.btn--lg { font-size: var(--ds-text-xs); padding: var(--ds-space-4) var(--ds-space-6); border-radius: var(--ds-radius-pill); width: 100%; min-height: 52px; margin-top: var(--ds-space-2); }
+.btn--primary { background: var(--ds-gradient-primary); color: var(--ds-color-white); box-shadow: var(--ds-shadow-btn-default); }
+.btn--primary:hover { background: var(--ds-gradient-primary-hover); box-shadow: var(--ds-shadow-btn-hover); transform: translateY(-1px); }
+.btn--primary:active { box-shadow: var(--ds-shadow-btn-active); transform: translateY(0); }
+.btn--primary:focus-visible { box-shadow: var(--ds-glow-violet); }
+.btn--acquire { background: transparent; color: var(--ds-color-apricot-dark); border: 2px solid var(--ds-color-apricot); }
+.btn--acquire:hover { background: var(--ds-color-apricot); color: var(--ds-color-navy-deep); transform: translateY(-1px); box-shadow: var(--ds-shadow-btn-hover); }
+.btn--acquire:focus-visible { box-shadow: var(--ds-glow-apricot); }
+.btn--secondary { background: transparent; color: var(--ds-color-violet); border: 2px solid var(--ds-color-violet); }
+.btn--secondary:hover { background: var(--ds-color-violet); color: var(--ds-color-white); transform: translateY(-1px); }
+.btn--secondary:focus-visible { box-shadow: var(--ds-glow-violet); }
+.btn--destructive { background: transparent; color: var(--ds-color-alert); border: 2px solid var(--ds-color-alert); }
+.btn--destructive:hover { background: var(--ds-color-alert); color: var(--ds-color-white); transform: translateY(-1px); }
+.btn--destructive:focus-visible { box-shadow: var(--ds-glow-alert); }
+.btn--state-active { background: var(--ds-color-success); color: var(--ds-color-navy-deep); border: 2px solid var(--ds-color-success); }
+.btn--state-active:hover { background: var(--ds-color-alert); border-color: var(--ds-color-alert); color: var(--ds-color-white); }
+.btn--state-active:focus-visible { box-shadow: var(--ds-glow-success); }
+.btn--neutral-light { background: transparent; color: var(--ds-color-grey-600); border: 2px solid var(--ds-color-grey-300); }
+.btn--neutral-light:hover { background: var(--ds-color-grey-200); border-color: var(--ds-color-grey-300); color: var(--ds-color-navy-deep); }
+.status { margin-top: var(--ds-space-4); padding: var(--ds-space-5); border-radius: var(--ds-radius-surface); border-left: 4px solid; }
+.status--info { background: var(--ds-color-info-pale); border-left-color: var(--ds-color-info); }
+.status--info .status-line { color: var(--ds-color-info-deep); }
+.status--info .status-name { color: var(--ds-color-navy-deep); }
+.status--info .status-meta { color: var(--ds-color-navy); }
+.status--success { background: var(--ds-color-success-pale); border-left-color: var(--ds-color-success); }
+.status--success .status-line { color: var(--ds-color-success-deep); }
+.status--success .status-name { color: var(--ds-color-navy-deep); }
+.status--success .status-meta { color: var(--ds-color-navy); }
+.status--warn { background: var(--ds-color-apricot-pale); border-left-color: var(--ds-color-apricot-dark); }
+.status--warn .status-line { color: var(--ds-color-apricot-dark); }
+.status--warn .status-name { color: var(--ds-color-navy-deep); }
+.status--warn .status-meta { color: var(--ds-color-navy); }
+.status--error { background: var(--ds-color-alert-pale); border-left-color: var(--ds-color-alert); }
+.status--error .status-line { color: var(--ds-color-alert-deep); }
+.status--error .status-name { color: var(--ds-color-navy-deep); }
+.status--error .status-meta { color: var(--ds-color-navy); }
+.status-line { font-family: var(--ds-font-display); font-size: var(--ds-text-sm); font-weight: var(--ds-weight-bold); text-transform: uppercase; letter-spacing: var(--ds-tracking-wide); }
+.status-name { margin-top: var(--ds-space-2); font-family: var(--ds-font-display); font-size: var(--ds-text-lg); font-weight: var(--ds-weight-extrabold); letter-spacing: var(--ds-tracking-tight); line-height: var(--ds-leading-tight); }
+.status-meta { margin-top: var(--ds-space-2); font-family: var(--ds-font-body); font-size: var(--ds-text-sm); line-height: var(--ds-leading-relaxed); }
+.helper { margin-top: var(--ds-space-3); color: var(--ds-color-grey-400); font-family: var(--ds-font-body); font-size: var(--ds-text-xs); }
+video { display: none; width: 100%; margin-top: var(--ds-space-4); border-radius: var(--ds-radius-surface); background: var(--ds-color-navy-abyss); border: 2px solid var(--ds-color-grey-300); overflow: hidden; }
+.results { display: grid; gap: var(--ds-space-3); margin-top: var(--ds-space-4); }
+.result { background: var(--ds-color-grey-50); border: 1px solid var(--ds-color-grey-200); border-radius: var(--ds-radius-surface); padding: var(--ds-space-4); padding-left: calc(var(--ds-space-4) + 4px); position: relative; }
+.result::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ds-color-blue-bright); border-radius: var(--ds-radius-surface) 0 0 var(--ds-radius-surface); }
+.result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--ds-space-3); }
+.result-name { font-family: var(--ds-font-display); font-size: var(--ds-text-base); font-weight: var(--ds-weight-bold); color: var(--ds-color-navy-deep); }
+.result-sub { margin-top: var(--ds-space-2); color: var(--ds-color-grey-500); font-family: var(--ds-font-body); font-size: var(--ds-text-xs); line-height: var(--ds-leading-relaxed); word-break: break-word; }
+.result-pill { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: var(--ds-radius-pill); padding: var(--ds-space-2) var(--ds-space-3); font-family: var(--ds-font-display); font-size: var(--ds-text-2xs); font-weight: var(--ds-weight-extrabold); text-transform: uppercase; letter-spacing: var(--ds-tracking-widest); }
+.result-pill--ok { background: var(--ds-color-success); color: var(--ds-color-navy-deep); }
+.result-pill--warn { background: var(--ds-color-apricot); color: var(--ds-color-navy-deep); }
+.card--apricot-accent { border-top: 4px solid var(--ds-color-apricot); }
+.card--apricot-accent .section-kicker { color: var(--ds-color-apricot-dark); }
+.card--violet-accent { border-top: 4px solid var(--ds-color-violet); }
+.card--violet-accent .section-kicker { color: var(--ds-color-violet); }
+.footer-note { text-align: center; color: var(--ds-color-grey-400); font-family: var(--ds-font-display); font-size: var(--ds-text-xs); font-weight: var(--ds-weight-medium); text-transform: uppercase; letter-spacing: var(--ds-tracking-wider); padding: var(--ds-space-4) 0; }
+.hidden { display: none !important; }
+@media (max-width: 540px) { .totals-grid, .row { grid-template-columns: 1fr; } .result-top { flex-direction: column; } .title { font-size: var(--ds-text-lg); } .hero__inner { padding: var(--ds-space-6) var(--ds-space-4); } .card__body { padding: var(--ds-space-5); } }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="section-top">
-        <h1>Event Check-in</h1>
-        <span class="badge" id="stationBadge">Desk</span>
+  <main class="app">
+    <section class="card hero">
+      <div class="hero__inner">
+        <div class="hero__chips">
+          <span class="badge badge--apricot"><span class="material-symbols-rounded">qr_code_scanner</span>NBNU Reception</span>
+          <span class="badge badge--periwinkle"><span class="material-symbols-rounded">calendar_today</span><span id="selectedDayPill">Monday</span></span>
+          <span class="badge badge--outline-apricot"><span class="material-symbols-rounded">point_of_sale</span><span id="stationBadge">Desk</span></span>
+        </div>
+        <h1 class="title">Event Check-in</h1>
+        <p class="lead">Scan QR codes, search manually, undo mistakes, and monitor live attendance totals by day.</p>
       </div>
-      <p class="muted">Reception-only scanning, manual search, and undo.</p>
+    </section>
 
-      <label for="pin">Daily PIN</label>
-      <input id="pin" inputmode="numeric" autocomplete="off" placeholder="Enter daily PIN" />
-
-      <label for="station">Station</label>
-      <select id="station">
-        <option>Front Desk A</option>
-        <option>Front Desk B</option>
-      </select>
-
-      <label for="day">Day</label>
-      <select id="day">
-        <option value="CheckIn_Monday">Monday</option>
-        <option value="CheckIn_Tuesday">Tuesday</option>
-      </select>
-
-      <div class="row" style="margin-top: 14px;">
-        <button class="primary" id="startBtn">Start scanning</button>
-        <button class="secondary hidden" id="stopBtn">Stop scanning</button>
+    <section class="card">
+      <div class="card__body">
+        <div class="section-kicker" style="color: var(--ds-color-blue-bright);">Live Data</div>
+        <h2 class="section-title">Attendance totals</h2>
+        <p class="section-copy">Pulled live from the sheet after every check-in and undo.</p>
+        <div class="totals-grid">
+          <div class="totals-card--monday">
+            <div class="totals-card__kicker">Day 1</div>
+            <h3 class="totals-card__title">Monday</h3>
+            <div class="totals-line" id="mondayTotals">Enter PIN to load totals.</div>
+          </div>
+          <div class="totals-card--tuesday">
+            <div class="totals-card__kicker">Day 2</div>
+            <h3 class="totals-card__title">Tuesday</h3>
+            <div class="totals-line" id="tuesdayTotals">Enter PIN to load totals.</div>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <video id="video" playsinline muted></video>
+    <section class="card card--apricot-accent">
+      <div class="card__body">
+        <div class="section-kicker">Scanner</div>
+        <h2 class="section-title">Reception controls</h2>
+        <p class="section-copy">Choose a day, then scan or search. Undo applies to the last check-in on this device for that selected day.</p>
 
-      <div class="status info" id="statusBox">
-        <div class="status-line" id="statusLine">Ready.</div>
-        <div class="big" id="nameLine"></div>
-        <div class="meta" id="metaLine"></div>
+        <label for="pin">Daily PIN</label>
+        <input id="pin" inputmode="numeric" autocomplete="off" placeholder="Enter daily PIN" />
+
+        <label for="station">Station</label>
+        <select id="station">
+          <option>Front Desk A</option>
+          <option>Front Desk B</option>
+        </select>
+
+        <label for="day">Day</label>
+        <select id="day">
+          <option value="CheckIn_Monday">Monday</option>
+          <option value="CheckIn_Tuesday">Tuesday</option>
+        </select>
+
+        <div class="row" style="margin-top: var(--ds-space-4);">
+          <button class="btn btn--lg btn--primary" id="startBtn"><span class="material-symbols-rounded">play_arrow</span>Start scanning</button>
+          <button class="btn btn--lg btn--secondary hidden" id="stopBtn"><span class="material-symbols-rounded">stop_circle</span>Stop scanning</button>
+        </div>
+
+        <video id="video" playsinline muted></video>
+
+        <div class="status status--info" id="statusBox">
+          <div class="status-line" id="statusLine">Ready</div>
+          <div class="status-name" id="nameLine"></div>
+          <div class="status-meta" id="metaLine"></div>
+        </div>
+
+        <div class="row" style="margin-top: var(--ds-space-3);">
+          <button class="btn btn--lg btn--destructive" id="undoBtn" disabled><span class="material-symbols-rounded">undo</span>Undo last</button>
+          <button class="btn btn--lg btn--neutral-light" id="clearBtn"><span class="material-symbols-rounded">ink_eraser</span>Clear</button>
+        </div>
+
+        <div class="helper" id="undoInfo">No check-in to undo yet.</div>
       </div>
+    </section>
 
-      <div class="row" style="margin-top: 12px;">
-        <button class="danger" id="undoBtn" disabled>Undo last check-in</button>
-        <button class="secondary" id="clearBtn">Clear</button>
+    <section class="card card--violet-accent">
+      <div class="card__body">
+        <div class="section-kicker">Lookup</div>
+        <h2 class="section-title">Manual search</h2>
+        <p class="section-copy">Search by name, token, or attendee type, then check in for the currently selected day.</p>
+
+        <input id="searchBox" autocomplete="off" placeholder="Search name, token, VD, or OBS…" />
+        <button class="btn btn--lg btn--acquire" id="searchBtn"><span class="material-symbols-rounded">search</span>Search</button>
+
+        <div class="results" id="results"></div>
       </div>
+    </section>
 
-      <div class="helper" id="undoInfo">No check-in to undo yet.</div>
-    </div>
-
-    <div class="card">
-      <h2>Manual search</h2>
-      <p class="muted">Search by first name, last name, token, or type.</p>
-
-      <input id="searchBox" autocomplete="off" placeholder="Search name, token, VD, or OBS…" />
-      <button class="secondary" id="searchBtn">Search</button>
-
-      <div class="results" id="results"></div>
-    </div>
-  </div>
+    <div class="footer-note">NBNU event check-in interface</div>
+  </main>
 
   <script type="module">
-    // Replace this with your deployed Apps Script /exec URL.
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbxQqzRvxJU3bHEod57M5Vqr9RlXQPXKYTcW2zcn6enGu_fABQE3WWRSIp655OHqUPOOVA/exec";
 
     import QrScanner from "https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js";
@@ -370,35 +304,51 @@
     const stationEl = document.getElementById("station");
     const dayEl = document.getElementById("day");
     const stationBadgeEl = document.getElementById("stationBadge");
-
+    const selectedDayPillEl = document.getElementById("selectedDayPill");
+    const mondayTotalsEl = document.getElementById("mondayTotals");
+    const tuesdayTotalsEl = document.getElementById("tuesdayTotals");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
     const videoEl = document.getElementById("video");
-
     const statusBox = document.getElementById("statusBox");
     const statusLine = document.getElementById("statusLine");
     const nameLine = document.getElementById("nameLine");
     const metaLine = document.getElementById("metaLine");
-
     const undoBtn = document.getElementById("undoBtn");
     const undoInfo = document.getElementById("undoInfo");
     const clearBtn = document.getElementById("clearBtn");
-
     const searchBox = document.getElementById("searchBox");
     const searchBtn = document.getElementById("searchBtn");
     const resultsEl = document.getElementById("results");
 
     let scanner = null;
     let isHandlingScan = false;
+    let lastSearchResults = [];
+    let lastCheckin = JSON.parse(localStorage.getItem("last_checkin") || "null");
 
     pinEl.value = localStorage.getItem("daily_pin") || "";
     stationEl.value = localStorage.getItem("station") || stationEl.value;
     dayEl.value = localStorage.getItem("day") || dayEl.value;
 
-    let lastCheckin = JSON.parse(localStorage.getItem("last_checkin") || "null");
-    refreshUndoUI();
-    updateStationBadge();
     setDefaultDayIfEmpty();
+    updateStationBadge();
+    updateSelectedDayPill();
+    refreshUndoUI();
+    clearStatus();
+
+    if (pinEl.value.trim()) {
+      loadTotals();
+    }
+
+    pinEl.addEventListener("change", () => {
+      localStorage.setItem("daily_pin", pinEl.value.trim());
+      if (pinEl.value.trim()) loadTotals();
+    });
+
+    pinEl.addEventListener("blur", () => {
+      localStorage.setItem("daily_pin", pinEl.value.trim());
+      if (pinEl.value.trim()) loadTotals();
+    });
 
     stationEl.addEventListener("change", () => {
       localStorage.setItem("station", stationEl.value);
@@ -407,8 +357,16 @@
 
     dayEl.addEventListener("change", () => {
       localStorage.setItem("day", dayEl.value);
+      updateSelectedDayPill();
       refreshUndoUI();
+      renderCurrentResultsState();
     });
+
+    function prettyDay(dayValue) {
+      if (dayValue === "CheckIn_Monday") return "Monday";
+      if (dayValue === "CheckIn_Tuesday") return "Tuesday";
+      return dayValue || "";
+    }
 
     function setDefaultDayIfEmpty() {
       if (localStorage.getItem("day")) return;
@@ -422,10 +380,8 @@
       stationBadgeEl.textContent = stationEl.value || "Desk";
     }
 
-    function prettyDay(dayValue) {
-      if (dayValue === "CheckIn_Monday") return "Monday";
-      if (dayValue === "CheckIn_Tuesday") return "Tuesday";
-      return dayValue || "";
+    function updateSelectedDayPill() {
+      selectedDayPillEl.textContent = prettyDay(dayEl.value);
     }
 
     function escapeHtml(value) {
@@ -440,28 +396,23 @@
 
     function setStatus(kind, statusText, name = "", meta = "") {
       statusBox.className = "status";
-      if (kind) statusBox.classList.add(kind);
-
+      statusBox.classList.add(kind || "status--info");
       statusLine.textContent = statusText || "";
       nameLine.textContent = name || "";
       metaLine.textContent = meta || "";
     }
 
     function clearStatus() {
-      setStatus("info", "Ready.", "", "");
+      setStatus("status--info", "Ready", "", "");
     }
 
     function refreshUndoUI() {
-      if (
-        lastCheckin &&
-        lastCheckin.token &&
-        lastCheckin.day === dayEl.value
-      ) {
+      if (lastCheckin && lastCheckin.token && lastCheckin.day === dayEl.value) {
         undoBtn.disabled = false;
-        undoInfo.textContent = `Last check-in for ${prettyDay(lastCheckin.day)}: ${lastCheckin.token}`;
+        undoInfo.textContent = "Last check-in for " + prettyDay(lastCheckin.day) + ": " + lastCheckin.token;
       } else if (lastCheckin && lastCheckin.token) {
         undoBtn.disabled = true;
-        undoInfo.textContent = `Last check-in was for ${prettyDay(lastCheckin.day)}. Switch days to undo it.`;
+        undoInfo.textContent = "Last check-in was for " + prettyDay(lastCheckin.day) + ". Switch days to undo it.";
       } else {
         undoBtn.disabled = true;
         undoInfo.textContent = "No check-in to undo yet.";
@@ -488,63 +439,83 @@
       const response = await fetch(ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          ...payload,
-          pin,
-          station,
-          day
-        })
+        body: JSON.stringify({ ...payload, pin, station, day })
       });
 
       return await response.json();
     }
 
+    async function loadTotals() {
+      if (!pinEl.value.trim()) {
+        mondayTotalsEl.textContent = "Enter PIN to load totals.";
+        tuesdayTotalsEl.textContent = "Enter PIN to load totals.";
+        return;
+      }
+
+      try {
+        const data = await apiCall({ action: "totals" });
+
+        if (data.status !== "ok") {
+          mondayTotalsEl.textContent = "Could not load totals.";
+          tuesdayTotalsEl.textContent = "Could not load totals.";
+          return;
+        }
+
+        const m = data.totals.monday;
+        const t = data.totals.tuesday;
+
+        mondayTotalsEl.innerHTML = "<strong>VD:</strong> " + m.vd + " • <strong>OBS:</strong> " + m.obs + " • <strong>Total:</strong> " + m.total;
+        tuesdayTotalsEl.innerHTML = "<strong>VD:</strong> " + t.vd + " • <strong>OBS:</strong> " + t.obs + " • <strong>Total:</strong> " + t.total;
+      } catch (error) {
+        mondayTotalsEl.textContent = "Could not load totals.";
+        tuesdayTotalsEl.textContent = "Could not load totals.";
+      }
+    }
+
+    async function refreshSearchIfNeeded() {
+      if (searchBox.value.trim()) {
+        await doSearch(true);
+      } else {
+        renderCurrentResultsState();
+      }
+    }
+
     async function doCheckin(token) {
       try {
-        setStatus("info", "Checking in…", "", token);
+        setStatus("status--info", "Checking in…", "", token);
         const data = await apiCall({ action: "checkin", token });
 
         if (data.status === "checked_in") {
-          const displayName = data.type ? `${data.name} (${data.type})` : data.name;
-          setStatus(
-            "success",
-            "✅ Checked in",
-            displayName,
-            `${data.day} • ${data.time} • ${data.station}`
-          );
-
+          const displayName = data.type ? data.name + " (" + data.type + ")" : data.name;
+          setStatus("status--success", "✅ Checked in", displayName, data.day + " • " + data.time + " • " + data.station);
           lastCheckin = { token, day: dayEl.value };
           localStorage.setItem("last_checkin", JSON.stringify(lastCheckin));
           refreshUndoUI();
-
+          await loadTotals();
+          await refreshSearchIfNeeded();
           if (navigator.vibrate) navigator.vibrate(100);
           return;
         }
 
         if (data.status === "already_checked_in") {
-          const displayName = data.type ? `${data.name} (${data.type})` : data.name;
-          setStatus(
-            "warn",
-            "⚠️ Already checked in",
-            displayName,
-            `${data.day} • First check-in: ${data.time}`
-          );
+          const displayName = data.type ? data.name + " (" + data.type + ")" : data.name;
+          setStatus("status--warn", "⚠️ Already checked in", displayName, data.day + " • First check-in: " + data.time);
           return;
         }
 
         if (data.status === "not_found") {
-          setStatus("error", "❌ Not found", "", "This QR code is not in the attendee list.");
+          setStatus("status--error", "❌ Not found", "", "This QR code is not in the attendee list.");
           return;
         }
 
         if (data.status === "unauthorized") {
-          setStatus("error", "🔒 Invalid PIN", "", "Ask for today's PIN.");
+          setStatus("status--error", "🔒 Invalid PIN", "", "Ask for today's PIN.");
           return;
         }
 
-        setStatus("error", "❌ Error", "", data.message || "Unknown error.");
+        setStatus("status--error", "❌ Error", "", data.message || "Unknown error.");
       } catch (error) {
-        setStatus("error", "❌ Error", "", error.message || String(error));
+        setStatus("status--error", "❌ Error", "", error.message || String(error));
       }
     }
 
@@ -552,69 +523,71 @@
       if (!lastCheckin || !lastCheckin.token) return;
 
       try {
-        setStatus("info", "Undoing…", "", lastCheckin.token);
-        const data = await apiCall({
-          action: "undo",
-          token: lastCheckin.token
-        });
+        setStatus("status--info", "Undoing…", "", lastCheckin.token);
+        const data = await apiCall({ action: "undo", token: lastCheckin.token });
 
         if (data.status === "undone") {
-          const displayName = data.type ? `${data.name} (${data.type})` : data.name;
-          setStatus("success", "↩️ Undone", displayName, data.message || "");
-
+          const displayName = data.type ? data.name + " (" + data.type + ")" : data.name;
+          setStatus("status--success", "↩️ Undone", displayName, data.message || "");
           lastCheckin = null;
           localStorage.removeItem("last_checkin");
           refreshUndoUI();
+          await loadTotals();
+          await refreshSearchIfNeeded();
           return;
         }
 
         if (data.status === "not_checked_in") {
-          const displayName = data.type ? `${data.name} (${data.type})` : data.name;
-          setStatus("warn", "⚠️ Not checked in", displayName, data.message || "");
+          const displayName = data.type ? data.name + " (" + data.type + ")" : data.name;
+          setStatus("status--warn", "⚠️ Not checked in", displayName, data.message || "");
           return;
         }
 
-        setStatus("error", "❌ Error", "", data.message || "Undo failed.");
+        setStatus("status--error", "❌ Error", "", data.message || "Undo failed.");
       } catch (error) {
-        setStatus("error", "❌ Error", "", error.message || String(error));
+        setStatus("status--error", "❌ Error", "", error.message || String(error));
       }
     }
 
     function renderResults(results) {
+      lastSearchResults = results || [];
       resultsEl.innerHTML = "";
 
-      if (!results.length) {
-        resultsEl.innerHTML = `<div class="muted">No results.</div>`;
+      if (!lastSearchResults.length) {
+        resultsEl.innerHTML = '<div class="helper">No results.</div>';
         return;
       }
 
-      for (const r of results) {
+      for (const r of lastSearchResults) {
         const selectedDay = dayEl.value;
         const checkedIn = selectedDay === "CheckIn_Monday" ? r.mondayCheckedIn : r.tuesdayCheckedIn;
-        const time = selectedDay === "CheckIn_Monday" ? r.mondayTime : r.tuesdayTime;
-        const pillClass = checkedIn ? "ok" : "warn";
+        const pillClass = checkedIn ? "result-pill result-pill--ok" : "result-pill result-pill--warn";
         const pillText = checkedIn ? "Checked in" : "Not checked in";
 
         const item = document.createElement("div");
         item.className = "result";
-        item.innerHTML = `
-          <div class="result-top">
-            <div>
-              <div class="result-name">${escapeHtml(r.name)}${r.type ? ` (${escapeHtml(r.type)})` : ""}</div>
-              <div class="result-sub">
-                Token: ${escapeHtml(r.token)}<br>
-                Monday: ${r.mondayCheckedIn ? escapeHtml(r.mondayTime) : "Not checked in"}<br>
-                Tuesday: ${r.tuesdayCheckedIn ? escapeHtml(r.tuesdayTime) : "Not checked in"}
-              </div>
-            </div>
-            <span class="pill ${pillClass}">${pillText}</span>
-          </div>
-        `;
+        item.innerHTML =
+          '<div class="result-top"><div><div class="result-name">' +
+          escapeHtml(r.name) +
+          (r.type ? " (" + escapeHtml(r.type) + ")" : "") +
+          '</div><div class="result-sub">Token: ' +
+          escapeHtml(r.token) +
+          '<br>Monday: ' +
+          (r.mondayCheckedIn ? escapeHtml(r.mondayTime) : "Not checked in") +
+          '<br>Tuesday: ' +
+          (r.tuesdayCheckedIn ? escapeHtml(r.tuesdayTime) : "Not checked in") +
+          '</div></div><span class="' +
+          pillClass +
+          '">' +
+          pillText +
+          '</span></div>';
 
         const button = document.createElement("button");
-        button.className = "secondary";
-        button.style.marginTop = "10px";
-        button.textContent = checkedIn ? `Already checked in for ${prettyDay(selectedDay)}` : `Check in for ${prettyDay(selectedDay)}`;
+        button.className = checkedIn ? "btn btn--lg btn--state-active" : "btn btn--lg btn--primary";
+        button.style.marginTop = "var(--ds-space-3)";
+        button.innerHTML = checkedIn
+          ? '<span class="material-symbols-rounded">check_circle</span>Already checked in for ' + prettyDay(selectedDay)
+          : '<span class="material-symbols-rounded">play_arrow</span>Check in for ' + prettyDay(selectedDay);
         button.disabled = checkedIn;
         button.addEventListener("click", () => doCheckin(r.token));
 
@@ -623,35 +596,52 @@
       }
     }
 
-    async function doSearch() {
+    function renderCurrentResultsState() {
+      if (lastSearchResults.length) {
+        renderResults(lastSearchResults);
+      }
+    }
+
+    async function doSearch(silent = false) {
       const query = searchBox.value.trim();
-      resultsEl.innerHTML = "";
+
+      if (!silent) {
+        resultsEl.innerHTML = "";
+      }
 
       if (!query) {
         clearStatus();
+        lastSearchResults = [];
+        resultsEl.innerHTML = "";
         return;
       }
 
       try {
-        setStatus("info", "Searching…", "", query);
+        if (!silent) {
+          setStatus("status--info", "Searching…", "", query);
+        }
+
         const data = await apiCall({ action: "search", query });
 
         if (data.status !== "ok") {
-          setStatus("error", "❌ Search error", "", data.message || "Unknown error.");
+          setStatus("status--error", "❌ Search error", "", data.message || "Unknown error.");
           return;
         }
 
-        clearStatus();
+        if (!silent) {
+          clearStatus();
+        }
+
         renderResults(data.results || []);
       } catch (error) {
-        setStatus("error", "❌ Error", "", error.message || String(error));
+        setStatus("status--error", "❌ Error", "", error.message || String(error));
       }
     }
 
     async function startScanner() {
       try {
         if (!pinEl.value.trim()) {
-          setStatus("warn", "Enter PIN first.", "", "");
+          setStatus("status--warn", "Enter PIN first", "", "");
           return;
         }
 
@@ -671,9 +661,9 @@
               setTimeout(async () => {
                 try {
                   await scanner.start();
-                  setStatus("info", "Scanning…", "", `Point camera at QR code for ${prettyDay(dayEl.value)}`);
+                  setStatus("status--info", "Scanning…", "", "Point camera at QR code for " + prettyDay(dayEl.value));
                 } catch (e) {
-                  setStatus("error", "❌ Camera error", "", "Could not restart scanner.");
+                  setStatus("status--error", "❌ Camera error", "", "Could not restart scanner.");
                 } finally {
                   isHandlingScan = false;
                 }
@@ -685,15 +675,14 @@
         videoEl.style.display = "block";
         startBtn.classList.add("hidden");
         stopBtn.classList.remove("hidden");
-
-        setStatus("info", "Starting camera…", "", "");
+        setStatus("status--info", "Starting camera…", "", "");
         await scanner.start();
-        setStatus("info", "Scanning…", "", `Point camera at QR code for ${prettyDay(dayEl.value)}`);
+        setStatus("status--info", "Scanning…", "", "Point camera at QR code for " + prettyDay(dayEl.value));
       } catch (error) {
         videoEl.style.display = "none";
         startBtn.classList.remove("hidden");
         stopBtn.classList.add("hidden");
-        setStatus("error", "❌ Camera error", "", "Allow camera permissions and try again.");
+        setStatus("status--error", "❌ Camera error", "", "Allow camera permissions and try again.");
       }
     }
 
@@ -712,15 +701,14 @@
     clearBtn.addEventListener("click", () => {
       searchBox.value = "";
       resultsEl.innerHTML = "";
+      lastSearchResults = [];
       clearStatus();
     });
 
-    searchBtn.addEventListener("click", doSearch);
+    searchBtn.addEventListener("click", () => doSearch());
     searchBox.addEventListener("keydown", (event) => {
       if (event.key === "Enter") doSearch();
     });
-
-    clearStatus();
   </script>
 </body>
 </html>
