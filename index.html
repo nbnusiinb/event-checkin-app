@@ -1218,6 +1218,7 @@ video {
   const DATE_TO_DAY = {
     '2026-10-20':'CheckIn_Tuesday', '2026-10-21':'CheckIn_Wednesday', '2026-10-22':'CheckIn_Thursday'
   };
+  const SCAN_RESTART_DELAY_MS = 800; // Time to read the check-in confirmation before scanning another attendee.
   const STORE = 'nbnu_agm_2026_'; // Separate from earlier events.
   const K = suffix => STORE + suffix;
   const $ = id => document.getElementById(id);
@@ -1493,9 +1494,12 @@ video {
         setStatus('status--success','✓ Checked in', `${data.name} (${data.type})`, `${data.day} · ${data.time} · ${data.station}`);
         success = true;
         if (navigator.vibrate) navigator.vibrate(100);
-        const totalsLoaded = await loadTotals();
-        if (totalsLoaded && dayEl.value === requestedDay) flashSelectedTotal();
-        await refreshSearchIfNeeded();
+        // Totals and optional search refresh run separately. Never hold up the
+        // next attendee's scan while waiting for these non-critical reads.
+        void loadTotals().then(totalsLoaded => {
+          if (totalsLoaded && dayEl.value === requestedDay) flashSelectedTotal();
+        });
+        void refreshSearchIfNeeded();
       } else if (data.status === 'already_checked_in') {
         setStatus('status--warn', 'Already checked in', `${data.name} (${data.type})`, `${data.day} · First check-in: ${data.time}. No changes made.`);
       } else if (data.status === 'not_found') {
@@ -1568,7 +1572,7 @@ video {
             } catch (error) {
               pauseScanner('Camera could not restart. Tap Scan next attendee.');
             } finally { scanBusy = false; }
-          }, 2200);
+          }, SCAN_RESTART_DELAY_MS);
         });
       }
       videoEl.style.display = 'block';
