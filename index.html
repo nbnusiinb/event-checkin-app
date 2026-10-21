@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>NBNU Event Check-in</title>
+  <title>NBNU Event Check-in · V2</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1061,6 +1061,15 @@ video {
     color: #FFFFFF;
   }
 }
+
+/* V2 server state indicator. Text also conveys the status (not colour alone). */
+.connection-badge { background: #17375A; color: #D0E5FF; }
+.connection-badge--ready { background: #113D38; color: #B8FBE1; }
+.connection-badge--busy { background: #193958; color: #D0E5FF; }
+.connection-badge--retry { background: #3A2B1F; color: #FFD5AE; }
+.connection-badge--attention { background: #3B1932; color: #FFD0DE; }
+.connection-badge--idle { background: #38281D; color: #F0BE8F; }
+#verifyBtn { margin-top: var(--ds-space-3); }
   </style>
 </head>
 <body>
@@ -1137,6 +1146,8 @@ video {
         <div class="status-name" id="nameLine"></div>
         <div class="status-meta" id="metaLine"></div>
       </div>
+
+    <button class="btn btn--lg btn--acquire hidden" id="verifyBtn" type="button"><span class="material-symbols-rounded" aria-hidden="true">fact_check</span>Verify last scan</button>
       <div class="row scan-actions">
         <button class="btn btn--lg btn--destructive" id="undoBtn" type="button" disabled><span class="material-symbols-rounded" aria-hidden="true">undo</span>Undo last</button>
         <button class="btn btn--lg btn--neutral-light" id="clearBtn" type="button"><span class="material-symbols-rounded" aria-hidden="true">ink_eraser</span>Clear result</button>
@@ -1201,434 +1212,669 @@ video {
         </div>
       </details>
   </section>
-  <div class="footer-note">NBNU AGM 2026 · Reception check-in</div>
+  <div class="footer-note">NBNU AGM 2026 · Reception check-in · V2.0</div>
 </main>
 
   <script type="module">
-  // Paste the NEW Apps Script /exec URL here. Do not place the PIN or attendee data in GitHub.
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyZgsa9-dvcS8ebzTRGr8jPztPbT0RMTFNUUyZObGn9WPuygyumJA8IuKGXo7MKkJJE/exec";
-  import QrScanner from "https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js";
-  QrScanner.WORKER_PATH = "https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js";
+// NBNU AGM 2026 — Reception phone frontend V2
+// Important: the backend PIN belongs ONLY in Google Apps Script, not in GitHub.
+// When updating the SAME Apps Script deployment, this URL can remain unchanged.
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyZgsa9-dvcS8ebzTRGr8jPztPbT0RMTFNUUyZObGn9WPuygyumJA8IuKGXo7MKkJJE/exec";
+import QrScanner from "https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js";
+QrScanner.WORKER_PATH = "https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js";
 
-  const DAYS = {
-    CheckIn_Tuesday: {name:'Tuesday', date:'October 20, 2026', key:'tuesday'},
-    CheckIn_Wednesday: {name:'Wednesday', date:'October 21, 2026', key:'wednesday'},
-    CheckIn_Thursday: {name:'Thursday', date:'October 22, 2026', key:'thursday'}
-  };
-  const DATE_TO_DAY = {
-    '2026-10-20':'CheckIn_Tuesday', '2026-10-21':'CheckIn_Wednesday', '2026-10-22':'CheckIn_Thursday'
-  };
-  const SCAN_RESTART_DELAY_MS = 800; // Time to read the check-in confirmation before scanning another attendee.
-  const STORE = 'nbnu_agm_2026_'; // Separate from earlier events.
-  const K = suffix => STORE + suffix;
-  const $ = id => document.getElementById(id);
-  const pinEl = $('pin'), pinEditor = $('pinEditor'), pinSaved = $('pinSaved'), pinForm = $('pinForm');
-  const pinSaveBtn = $('pinSaveBtn'), pinMessage = $('pinMessage'), pinSavedMessage = $('pinSavedMessage');
-  const editPinBtn = $('editPinBtn'), stationEl = $('station'), dayEl = $('day');
-  const stationBadgeEl = $('stationBadge'), selectedDayPillEl = $('selectedDayPill'), readyBadgeEl = $('readyBadge');
-  const startBtn = $('startBtn'), startLabel = $('startLabel'), stopBtn = $('stopBtn');
-  const videoEl = $('video'), scannerHint = $('scannerHint');
-  const statusBox = $('statusBox'), statusLine = $('statusLine'), nameLine = $('nameLine'), metaLine = $('metaLine');
-  const undoBtn = $('undoBtn'), undoInfo = $('undoInfo'), clearBtn = $('clearBtn');
-  const searchDetails = $('searchDetails'), searchBox = $('searchBox'), searchForm = $('searchForm');
-  const searchBtn = $('searchBtn'), resultsEl = $('results');
-  const selectedTotalsTitle = $('selectedTotalsTitle'), selectedTotal = $('selectedTotal');
-  const selectedVd = $('selectedVd'), selectedObs = $('selectedObs'), totalUpdated = $('totalUpdated');
-  const dailyTotalCard = $('dailyTotalCard'), previewFirst = $('previewFirst'), previewSecond = $('previewSecond');
-  const refreshBtn = $('refreshBtn'), attendanceFeedback = $('attendanceFeedback');
+const DAYS = {
+  CheckIn_Tuesday: {name: 'Tuesday', date: 'October 20, 2026', key: 'tuesday'},
+  CheckIn_Wednesday: {name: 'Wednesday', date: 'October 21, 2026', key: 'wednesday'},
+  CheckIn_Thursday: {name: 'Thursday', date: 'October 22, 2026', key: 'thursday'},
+};
+const DATE_TO_DAY = {
+  '2026-10-20': 'CheckIn_Tuesday',
+  '2026-10-21': 'CheckIn_Wednesday',
+  '2026-10-22': 'CheckIn_Thursday',
+};
+const SCAN_RESTART_DELAY_MS = 800;
+const STORE = 'nbnu_agm_2026_'; // Preserve saved settings from V1.
+const K = key => STORE + key;
+const $ = id => document.getElementById(id);
+const pinEl = $('pin'), pinEditor = $('pinEditor'), pinSaved = $('pinSaved');
+const pinSaveBtn = $('pinSaveBtn'), pinMessage = $('pinMessage');
+const pinSavedMessage = $('pinSavedMessage'), editPinBtn = $('editPinBtn');
+const stationEl = $('station'), dayEl = $('day');
+const stationBadgeEl = $('stationBadge'), selectedDayPillEl = $('selectedDayPill');
+const readyBadgeEl = $('readyBadge');
+const startBtn = $('startBtn'), startLabel = $('startLabel'), stopBtn = $('stopBtn');
+const videoEl = $('video'), scannerHint = $('scannerHint');
+const statusBox = $('statusBox'), statusLine = $('statusLine');
+const nameLine = $('nameLine'), metaLine = $('metaLine');
+const undoBtn = $('undoBtn'), undoInfo = $('undoInfo'), clearBtn = $('clearBtn');
+const verifyBtn = $('verifyBtn');
+const searchDetails = $('searchDetails'), searchBox = $('searchBox');
+const searchBtn = $('searchBtn'), resultsEl = $('results');
+const selectedTotalsTitle = $('selectedTotalsTitle'), selectedTotal = $('selectedTotal');
+const selectedVd = $('selectedVd'), selectedObs = $('selectedObs');
+const totalUpdated = $('totalUpdated'), dailyTotalCard = $('dailyTotalCard');
+const previewFirst = $('previewFirst'), previewSecond = $('previewSecond');
+const refreshBtn = $('refreshBtn'), attendanceFeedback = $('attendanceFeedback');
 
-  let scanner = null;
-  let scanningWanted = false;
-  let scanBusy = false;
-  let mutating = false;
-  let pinReady = false;
-  let restartTimeout = null;
-  let totalRequestSequence = 0;
-  let totals = null;
-  let lastUpdated = null;
-  let lastSearchResults = [];
-  let lastCheckin = null;
-  let lastScannedToken = "";
-  let lastScannedAt = 0;
-  let flashCleanup = null;
-  try { lastCheckin = JSON.parse(localStorage.getItem(K('last_checkin')) || 'null'); } catch (_) {}
+let scanner = null;
+let scanningWanted = false;
+let scanBusy = false;
+let mutating = false;
+let pinReady = false;
+let restartTimeout = null;
+let totalsInFlight = false;
+let totalsSequence = 0;
+let totals = null;
+let lastUpdated = null;
+let lastSearchResults = [];
+let lastCheckin = readStoredJson('last_checkin');
+let pendingVerification = readStoredJson('pending_verification');
+let lastScannedToken = '';
+let lastScannedAt = 0;
+let flashCleanup = null;
+let totalsPollTimeout = null;
+let connectionState = 'idle';
 
-  pinEl.value = localStorage.getItem(K('pin')) || '';
-  stationEl.value = localStorage.getItem(K('station')) || stationEl.value;
-  dayEl.value = localStorage.getItem(K('day')) || 'CheckIn_Tuesday';
-  if (!DAYS[dayEl.value]) dayEl.value = 'CheckIn_Tuesday';
+function readStoredJson(key) {
+  try { return JSON.parse(localStorage.getItem(K(key)) || 'null'); }
+  catch (_) { return null; }
+}
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-  function todayLocal() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+pinEl.value = localStorage.getItem(K('pin')) || '';
+stationEl.value = localStorage.getItem(K('station')) || stationEl.value;
+dayEl.value = localStorage.getItem(K('day')) || 'CheckIn_Tuesday';
+if (!DAYS[dayEl.value]) dayEl.value = 'CheckIn_Tuesday';
+
+function todayLocal() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+function autoSelectEventDay() {
+  // Never change the day underneath an unresolved check-in.
+  if (pendingVerification) return false;
+  const today = todayLocal();
+  const day = DATE_TO_DAY[today];
+  if (day && localStorage.getItem(K('date_selected')) !== today) {
+    if (scanningWanted) stopScanner();
+    dayEl.value = day;
+    localStorage.setItem(K('day'), day);
+    localStorage.setItem(K('date_selected'), today);
+    return true;
   }
-  function autoSelectEventDay() {
-    const today = todayLocal();
-    const day = DATE_TO_DAY[today];
-    if (day && localStorage.getItem(K('date_selected')) !== today) {
-      if (scanningWanted) stopScanner();
-      dayEl.value = day;
-      localStorage.setItem(K('day'), day);
-      localStorage.setItem(K('date_selected'), today);
-      return true;
-    }
-    return false;
+  return false;
+}
+function currentDay() { return DAYS[dayEl.value]; }
+function updateBadges() {
+  selectedDayPillEl.textContent = currentDay().name;
+  stationBadgeEl.textContent = stationEl.value || 'Desk';
+  selectedTotalsTitle.textContent = currentDay().name + "'s attendance";
+}
+function setConnection(mode, label) {
+  connectionState = mode;
+  readyBadgeEl.className = 'badge connection-badge connection-badge--' + mode;
+  readyBadgeEl.textContent = label || ({
+    idle: 'PIN needed', ready: 'Ready', busy: 'Processing',
+    retry: 'Reception busy', attention: 'Needs attention',
+  }[mode] || 'Ready');
+}
+function setStatus(kind, status, name = '', meta = '') {
+  statusBox.className = 'status ' + kind;
+  statusLine.textContent = status;
+  nameLine.textContent = name;
+  metaLine.textContent = meta;
+}
+function clearStatus() { setStatus('status--info', 'Ready for next attendee'); }
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+function updateControlState() {
+  dayEl.disabled = mutating || !!pendingVerification;
+  stationEl.disabled = mutating;
+  editPinBtn.disabled = mutating;
+  startBtn.disabled = mutating || !pinReady || scanBusy || !!pendingVerification;
+  searchBtn.disabled = mutating || !pinReady;
+  refreshBtn.disabled = !pinReady || mutating || totalsInFlight;
+  verifyBtn.disabled = !pinReady || mutating || !pendingVerification;
+  verifyBtn.classList.toggle('hidden', !pendingVerification);
+  refreshUndoUI();
+  if (!pinReady && !mutating && !pendingVerification) setConnection('idle');
+}
+function refreshUndoUI() {
+  const valid = !!(lastCheckin?.token && lastCheckin.day === dayEl.value);
+  undoBtn.disabled = !valid || mutating || !pinReady || !!pendingVerification;
+  undoInfo.textContent = valid
+    ? `Last check-in: ${lastCheckin.name || lastCheckin.token} · ${currentDay().name}`
+    : lastCheckin?.token
+      ? `Last check-in was for ${DAYS[lastCheckin.day]?.name || 'another day'}. Switch days to undo it.`
+      : 'No check-in to undo yet.';
+}
+function renderTotals() {
+  const key = currentDay().key;
+  const selected = totals?.[key];
+  selectedTotal.textContent = selected ? String(selected.total) : '—';
+  selectedVd.textContent = selected ? String(selected.vd) : '—';
+  selectedObs.textContent = selected ? String(selected.obs) : '—';
+  for (const day of ['tuesday', 'wednesday', 'thursday']) {
+    const row = totals?.[day];
+    $(day + 'Total').textContent = row ? String(row.total) : '—';
+    $(day + 'Breakdown').textContent = row ? `VD ${row.vd} · OBS ${row.obs}` : 'VD — · OBS —';
+    document.querySelector(`[data-day="${day}"]`).classList.toggle('hidden', day === key);
   }
-  function currentDay() { return DAYS[dayEl.value]; }
-  function updateBadges() {
-    selectedDayPillEl.textContent = currentDay().name;
-    stationBadgeEl.textContent = stationEl.value || 'Desk';
-    selectedTotalsTitle.textContent = currentDay().name + "'s attendance";
+  const otherDays = Object.values(DAYS).filter(day => day.key !== key);
+  for (const [i, day] of otherDays.entries()) {
+    const count = totals?.[day.key]?.total;
+    (i === 0 ? previewFirst : previewSecond).textContent =
+      `${day.name.slice(0,3)} ${day.date.match(/October (\d+)/)[1]} · ${Number.isInteger(count) ? count + ' checked in' : '—'}`;
   }
-  function setStatus(kind, status, name = '', meta = '') {
-    statusBox.className = 'status ' + (kind || 'status--info');
-    statusLine.textContent = status;
-    nameLine.textContent = name;
-    metaLine.textContent = meta;
+  if (lastUpdated) {
+    totalUpdated.textContent = 'Updated ' + lastUpdated.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) +
+      ' · Automatic refresh every 90–120 seconds · Tap Refresh for latest';
   }
-  function clearStatus() { setStatus('status--info', 'Ready for next attendee'); }
-  function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
-  }
-  function updateControlState() {
-    dayEl.disabled = mutating;
-    stationEl.disabled = mutating;
-    editPinBtn.disabled = mutating;
-    startBtn.disabled = mutating || !pinReady || scanBusy;
-    searchBtn.disabled = mutating || !pinReady;
-    refreshBtn.disabled = !pinReady;
-    readyBadgeEl.textContent = pinReady ? 'Ready' : 'PIN needed';
-    refreshUndoUI();
-  }
-  function refreshUndoUI() {
-    const valid = lastCheckin?.token && lastCheckin.day === dayEl.value;
-    undoBtn.disabled = !valid || mutating || !pinReady;
-    undoInfo.textContent = valid
-      ? `Last check-in: ${lastCheckin.name || lastCheckin.token} · ${currentDay().name}`
-      : lastCheckin?.token
-        ? `Last check-in was for ${DAYS[lastCheckin.day]?.name || 'another day'}. Switch days to undo it.`
-        : 'No check-in to undo yet.';
-  }
-  function renderTotals() {
-    const key = currentDay().key;
-    const selected = totals?.[key];
-    selectedTotal.textContent = selected ? String(selected.total) : '—';
-    selectedVd.textContent = selected ? String(selected.vd) : '—';
-    selectedObs.textContent = selected ? String(selected.obs) : '—';
-    for (const day of ['tuesday','wednesday','thursday']) {
-      const row = totals?.[day];
-      $(day + 'Total').textContent = row ? String(row.total) : '—';
-      $(day + 'Breakdown').textContent = row ? `VD ${row.vd} · OBS ${row.obs}` : 'VD — · OBS —';
-      document.querySelector(`[data-day="${day}"]`).classList.toggle('hidden', day === key);
-    }
-    const otherDays = Object.values(DAYS).filter(day => day.key !== key);
-    for (const [index, day] of otherDays.entries()) {
-      const count = totals?.[day.key]?.total;
-      const label = `${day.name.slice(0, 3)} ${day.date.match(/October (\d+)/)[1]} · ${Number.isInteger(count) ? count + ' checked in' : '—'}`;
-      (index === 0 ? previewFirst : previewSecond).textContent = label;
-    }
-    if (lastUpdated) totalUpdated.textContent = 'Updated ' + lastUpdated.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) + ' · Counts may change until check-in closes';
-    updateControlState();
-  }
-  function flashSelectedTotal() {
-    if (flashCleanup) clearTimeout(flashCleanup);
+  updateControlState();
+}
+function flashSelectedTotal() {
+  if (flashCleanup) clearTimeout(flashCleanup);
+  dailyTotalCard.classList.remove('daily-total--updated');
+  void dailyTotalCard.offsetWidth;
+  dailyTotalCard.classList.add('daily-total--updated');
+  flashCleanup = setTimeout(() => {
     dailyTotalCard.classList.remove('daily-total--updated');
-    // Restart the flash for each confirmed check-in.
-    void dailyTotalCard.offsetWidth;
-    dailyTotalCard.classList.add('daily-total--updated');
-    flashCleanup = setTimeout(() => { dailyTotalCard.classList.remove('daily-total--updated'); flashCleanup = null; }, 1200);
+    flashCleanup = null;
+  }, 1200);
+}
+
+async function apiCall(payload, options = {}) {
+  const pin = options.pin ?? pinEl.value.trim();
+  const timeoutMs = options.timeoutMs ?? 15000;
+  if (!ENDPOINT.startsWith('https://script.google.com/macros/s/') || !ENDPOINT.endsWith('/exec')) {
+    throw new Error('Set the Google Apps Script deployment /exec URL in index.html.');
   }
-  async function apiCall(payload, pin = pinEl.value.trim()) {
-    if (!ENDPOINT.startsWith('https://script.google.com/macros/s/') || !ENDPOINT.endsWith('/exec')) {
-      throw new Error('Paste your NEW Apps Script deployment /exec URL into index.html.');
-    }
-    if (!pin) throw new Error('Enter the reception PIN first.');
+  if (!pin) throw new Error('Enter the reception PIN first.');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
     const response = await fetch(ENDPOINT, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({pin, station:stationEl.value, day:dayEl.value, ...payload})
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({pin, station: stationEl.value, day: dayEl.value, ...payload}),
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error('Network request failed (' + response.status + ').');
-    return response.json();
+    return await response.json();
+  } catch (error) {
+    // Aborting a fetch does not necessarily stop a request already executing in
+    // Google Apps Script. Treat this check-in outcome as UNCERTAIN.
+    if (error?.name === 'AbortError') {
+      throw new Error('Google took too long to respond. The result may still have been saved.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  async function loadTotals(pinOverride = null) {
-    const pin = pinOverride ?? pinEl.value.trim();
-    if (!pin) return false;
-    const sequence = ++totalRequestSequence;
-    try {
-      const data = await apiCall({action:'totals'}, pin);
-      if (data.status === 'unauthorized') {
-        if (sequence === totalRequestSequence) {
-          pinReady = false;
-          if (scanningWanted) stopScanner();
-          localStorage.removeItem(K('pin'));
-          showPinEditor('Invalid PIN. Please re-enter the reception PIN.');
-          totalUpdated.textContent = 'PIN not accepted. Attendance unavailable.';
-          updateControlState();
-        }
-        return false;
-      }
-      if (data.status !== 'ok' || !data.totals) throw new Error(data.message || 'Totals unavailable.');
-      for (const key of ['tuesday','wednesday','thursday']) {
-        const row = data.totals[key];
-        if (!row || ![row.vd,row.obs,row.total].every(Number.isInteger)) throw new Error('Invalid totals response.');
-      }
-      if (sequence !== totalRequestSequence) return false;
-      totals = data.totals;
-      lastUpdated = new Date();
-      renderTotals();
-      return true;
-    } catch (error) {
-      if (sequence === totalRequestSequence) {
-        totalUpdated.textContent = lastUpdated
-          ? `Could not refresh. Last successful update ${lastUpdated.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.`
-          : 'Could not load totals. Check connection and try again.';
-        attendanceFeedback.textContent = error.message || 'Connection error.';
-      }
+}
+
+async function loadTotals(pinOverride = null) {
+  if (!pinEl.value.trim() && !pinOverride) return false;
+  if (totalsInFlight) return false;
+  totalsInFlight = true;
+  updateControlState();
+  const sequence = ++totalsSequence;
+  try {
+    const data = await apiCall({action: 'totals'}, {pin: pinOverride ?? pinEl.value.trim(), timeoutMs: 15000});
+    if (data.status === 'unauthorized') {
+      pinReady = false;
+      if (scanningWanted) stopScanner();
+      localStorage.removeItem(K('pin'));
+      showPinEditor('Invalid PIN. Please re-enter the reception PIN.');
+      totalUpdated.textContent = 'PIN not accepted. Attendance unavailable.';
       return false;
     }
-  }
-  function showPinEditor(message = '') {
-    pinEditor.classList.remove('hidden');
-    pinSaved.classList.add('hidden');
-    pinMessage.textContent = message;
-  }
-  function showSavedPin() {
-    pinEditor.classList.add('hidden');
-    pinSaved.classList.remove('hidden');
-    pinSavedMessage.textContent = 'Stored on this phone · Use edit to change';
-    pinMessage.textContent = '';
-  }
-  async function submitPin() {
-    const pin = pinEl.value.trim();
-    if (!pin) { showPinEditor('Enter a PIN.'); pinEl.focus(); return; }
-    pinSaveBtn.disabled = true;
-    pinSaveBtn.textContent = 'Checking…';
-    pinMessage.textContent = 'Verifying reception PIN…';
-    const valid = await loadTotals(pin);
-    if (valid) {
-      pinReady = true;
-      localStorage.setItem(K('pin'), pin);
-      attendanceFeedback.textContent = '';
-      showSavedPin();
-    } else if (!pinMessage.textContent || pinMessage.textContent === 'Verifying reception PIN…') {
-      pinMessage.textContent = 'Could not verify the PIN. Check your connection and try again.';
+    if (data.status !== 'ok' || !data.totals) throw new Error(data.message || 'Totals unavailable.');
+    for (const key of ['tuesday','wednesday','thursday']) {
+      const row = data.totals[key];
+      if (!row || ![row.vd,row.obs,row.total].every(Number.isInteger)) {
+        throw new Error('Invalid response from attendance service.');
+      }
     }
-    pinSaveBtn.disabled = false;
-    pinSaveBtn.textContent = 'Submit PIN';
+    if (sequence !== totalsSequence) return false;
+    const oldCount = totals?.[currentDay().key]?.total;
+    totals = data.totals;
+    lastUpdated = new Date();
+    renderTotals();
+    if (oldCount !== undefined && oldCount !== totals[currentDay().key].total) flashSelectedTotal();
+    attendanceFeedback.textContent = '';
+    return true;
+  } catch (error) {
+    totalUpdated.textContent = lastUpdated
+      ? `Could not refresh. Last update: ${lastUpdated.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}. Scanning is still available.`
+      : 'Totals unavailable. Check the connection and try again.';
+    attendanceFeedback.textContent = 'Totals refresh failed: ' + (error?.message || 'Connection problem.');
+    return false;
+  } finally {
+    totalsInFlight = false;
     updateControlState();
   }
-  function stopScanner() {
-    scanningWanted = false;
-    if (restartTimeout) clearTimeout(restartTimeout);
-    restartTimeout = null;
-    scanner?.stop();
-    videoEl.style.display = 'none';
-    startBtn.classList.remove('hidden');
-    stopBtn.classList.add('hidden');
-    updateControlState();
-  }
-  function pauseScanner(hint = 'Review the result, then tap Scan next attendee.') {
-    stopScanner();
-    startLabel.textContent = 'Scan next attendee';
-    scannerHint.textContent = hint;
-  }
-  function renderResults(results) {
-    lastSearchResults = results || [];
-    resultsEl.replaceChildren();
-    if (!lastSearchResults.length) {
-      if (searchBox.value.trim()) resultsEl.textContent = 'No matching attendee. Try a different spelling or the badge token.';
-      return;
+}
+function scheduleTotalsPolling() {
+  if (totalsPollTimeout) clearTimeout(totalsPollTimeout);
+  // Jitter keeps all reception phones from refreshing at exactly the same time.
+  totalsPollTimeout = setTimeout(async () => {
+    if (!document.hidden && pinReady && !mutating && !scanBusy && !pendingVerification) {
+      await loadTotals();
     }
-    for (const r of lastSearchResults) {
-      const key = currentDay().key;
-      const checked = !!r[key+'CheckedIn'];
-      const item = document.createElement('div');
-      item.className = 'result';
-      const times = Object.values(DAYS).map(day => `${day.name}: ${r[day.key+'CheckedIn'] ? escapeHtml(r[day.key+'Time']) : 'Not checked in'}`).join('<br>');
-      item.innerHTML = `<div class="result-top"><div><div class="result-name">${escapeHtml(r.name)} (${escapeHtml(r.type || '')})</div>` +
-        `<div class="result-sub">Token: ${escapeHtml(r.token)}<br>${times}</div></div>` +
-        `<span class="result-pill ${checked ? 'result-pill--ok':'result-pill--warn'}">${checked ? 'Checked in':'Not checked in'}</span></div>`;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = checked ? 'btn btn--lg btn--state-active' : 'btn btn--lg btn--primary';
-      button.style.marginTop = 'var(--ds-space-3)';
-      button.textContent = checked ? `Already checked in for ${currentDay().name}` : `Check in for ${currentDay().name}`;
-      button.disabled = checked || mutating;
-      const selectedDay = dayEl.value;
-      button.addEventListener('click', () => doCheckin(r.token, selectedDay));
-      item.appendChild(button);
-      resultsEl.appendChild(item);
-    }
-  }
-  async function doSearch(silent = false) {
-    const query = searchBox.value.trim();
-    if (!query) { resultsEl.replaceChildren(); lastSearchResults = []; return; }
-    try {
-      if (!silent) setStatus('status--info', 'Searching…');
-      const data = await apiCall({action:'search', query});
-      if (data.status !== 'ok') throw new Error(data.message || 'Search failed.');
-      renderResults(data.results || []);
-      if (!silent) clearStatus();
-    } catch (error) {
-      if (!silent) setStatus('status--error', 'Search error', '', error.message || String(error));
-    }
-  }
-  async function refreshSearchIfNeeded() {
-    if (searchDetails.open && searchBox.value.trim()) await doSearch(true);
-  }
-  function setMutating(value) {
-    mutating = value;
-    updateControlState();
-  }
-  async function doCheckin(token, requestedDay = dayEl.value) {
-    if (mutating) return false;
-    setMutating(true);
-    let success = false;
-    try {
-      setStatus('status--info','Checking in…','',token);
-      const data = await apiCall({action:'checkin', token, day:requestedDay});
-      if (data.status === 'checked_in') {
-        lastCheckin = {token,day:requestedDay,name:data.name,type:data.type,time:data.time};
-        localStorage.setItem(K('last_checkin'), JSON.stringify(lastCheckin));
-        setStatus('status--success','✓ Checked in', `${data.name} (${data.type})`, `${data.day} · ${data.time} · ${data.station}`);
-        success = true;
-        if (navigator.vibrate) navigator.vibrate(100);
-        // Totals and optional search refresh run separately. Never hold up the
-        // next attendee's scan while waiting for these non-critical reads.
-        void loadTotals().then(totalsLoaded => {
-          if (totalsLoaded && dayEl.value === requestedDay) flashSelectedTotal();
-        });
-        void refreshSearchIfNeeded();
-      } else if (data.status === 'already_checked_in') {
-        setStatus('status--warn', 'Already checked in', `${data.name} (${data.type})`, `${data.day} · First check-in: ${data.time}. No changes made.`);
-      } else if (data.status === 'not_found') {
-        setStatus('status--error','QR not recognized','','Try again or search by name.');
-      } else if (data.status === 'incomplete_record') {
-        setStatus('status--warn','Registration incomplete','',data.message);
-      } else if (data.status === 'unauthorized') {
-        setStatus('status--error','Invalid PIN','','Edit the reception PIN to continue.');
-        pinReady = false; localStorage.removeItem(K('pin')); showPinEditor('Re-enter the reception PIN.');
-      } else {
-        setStatus('status--error','Check-in error','',data.message || 'Try again.');
-      }
-    } catch (error) {
-      setStatus('status--error','Connection error','',error.message || String(error));
-    } finally {
-      setMutating(false);
-    }
-    return success;
-  }
-  async function doUndo() {
-    if (mutating || !lastCheckin?.token || lastCheckin.day !== dayEl.value) return;
-    const {token,day,name} = lastCheckin;
-    if (!confirm(`Undo ${name || token}'s ${DAYS[day].name} check-in?`)) return;
-    if (scanningWanted) stopScanner();
-    setMutating(true);
-    try {
-      setStatus('status--info','Undoing…',name || token);
-      const data = await apiCall({action:'undo',token,day});
-      if (data.status === 'undone') {
-        lastCheckin = null; localStorage.removeItem(K('last_checkin'));
-        setStatus('status--success','Check-in undone',data.name,data.message);
-        await loadTotals(); await refreshSearchIfNeeded();
-      } else {
-        setStatus('status--warn','Undo not completed',data.name || '',data.message || data.status);
-      }
-    } catch (error) {
-      setStatus('status--error','Undo error','',error.message || String(error));
-    } finally { setMutating(false); }
-  }
-  async function startScanner() {
-    if (!pinReady) { showPinEditor('Submit your reception PIN first.'); pinEl.focus(); return; }
-    if (scanBusy || mutating || scanningWanted) return;
-    scanningWanted = true;
-    try {
-      if (!scanner) {
-        scanner = new QrScanner(videoEl, async result => {
-          if (!scanningWanted || scanBusy || mutating) return;
-          const token = String(result?.data || result || '').trim();
-          if (!token) return;
-          // Avoid repeatedly capturing a badge left in front of the lens.
-          if (token === lastScannedToken && Date.now() - lastScannedAt < 6000) return;
-          lastScannedToken = token;
-          lastScannedAt = Date.now();
-          const capturedDay = dayEl.value;
-          scanBusy = true;
-          scanner.stop();
-          scannerHint.textContent = 'Processing QR…';
-          const success = await doCheckin(token, capturedDay);
-          if (!success) {
-            scanBusy = false;
-            pauseScanner('Check the result. Tap Scan next attendee or open manual search.');
-            return;
-          }
-          restartTimeout = setTimeout(async () => {
-            restartTimeout = null;
-            if (!scanningWanted) { scanBusy = false; return; }
-            try {
-              await scanner.start();
-              scannerHint.textContent = `Camera ready for next ${currentDay().name} attendee. Remove the previous badge from view.`;
-            } catch (error) {
-              pauseScanner('Camera could not restart. Tap Scan next attendee.');
-            } finally { scanBusy = false; }
-          }, SCAN_RESTART_DELAY_MS);
-        });
-      }
-      videoEl.style.display = 'block';
-      startBtn.classList.add('hidden'); stopBtn.classList.remove('hidden');
-      scannerHint.textContent = 'Starting camera…';
-      await scanner.start();
-      scannerHint.textContent = `Point the camera at a QR code for ${currentDay().name}.`;
-      // Do not clear the previous result while the next attendee is being scanned.
-    } catch (error) {
-      pauseScanner('Allow camera access and try again.');
-      setStatus('status--error','Camera error','','Check permissions, then tap Scan next attendee.');
-    }
-  }
-  function changeSelectedDay() {
-    if (scanningWanted) stopScanner();
-    localStorage.setItem(K('day'),dayEl.value);
-    localStorage.setItem(K('date_selected'),todayLocal());
-    updateBadges(); renderTotals(); renderResults(lastSearchResults);
-    clearStatus();
-    scannerHint.textContent = `Day changed to ${currentDay().name}. Start scanning when ready.`;
-  }
-
-  autoSelectEventDay();
-  updateBadges(); renderTotals(); clearStatus();
-  if (pinEl.value.trim()) {
-    pinSavedMessage.textContent = 'Checking stored PIN…';
+    scheduleTotalsPolling();
+  }, 90000 + Math.floor(Math.random() * 30000));
+}
+function showPinEditor(message = '') {
+  pinEditor.classList.remove('hidden');
+  pinSaved.classList.add('hidden');
+  pinMessage.textContent = message;
+}
+function showSavedPin() {
+  pinEditor.classList.add('hidden');
+  pinSaved.classList.remove('hidden');
+  pinSavedMessage.textContent = 'Stored on this phone · Use edit to change';
+  pinMessage.textContent = '';
+}
+async function submitPin() {
+  const pin = pinEl.value.trim();
+  if (!pin) { showPinEditor('Enter a PIN.'); pinEl.focus(); return; }
+  pinSaveBtn.disabled = true;
+  pinSaveBtn.textContent = 'Checking…';
+  pinMessage.textContent = 'Verifying reception PIN…';
+  setConnection('busy', 'Connecting');
+  const valid = await loadTotals(pin);
+  if (valid) {
+    pinReady = true;
+    localStorage.setItem(K('pin'), pin);
     showSavedPin();
-    submitPin();
-  } else { showPinEditor(); updateControlState(); }
+    setConnection(pendingVerification ? 'attention' : 'ready');
+    if (pendingVerification) {
+      setStatus('status--warn', 'Verify previous scan', '',
+        `A check-in for ${pendingVerification.token} has not been confirmed. Tap Verify last scan.`);
+    }
+  } else if (!pinMessage.textContent || pinMessage.textContent === 'Verifying reception PIN…') {
+    showPinEditor('Could not connect. Check Wi-Fi and tap Submit PIN to try again.');
+    setConnection('attention', 'Connection issue');
+  }
+  pinSaveBtn.disabled = false;
+  pinSaveBtn.textContent = 'Submit PIN';
+  updateControlState();
+}
 
-  pinForm.addEventListener('submit', event => { event.preventDefault(); submitPin(); });
-  editPinBtn.addEventListener('click', () => {
-    if (scanningWanted) stopScanner();
-    pinReady = false; updateControlState();
-    showPinEditor(); pinEl.focus(); pinEl.select();
-  });
-  stationEl.addEventListener('change', () => {
-    localStorage.setItem(K('station'), stationEl.value); updateBadges();
-  });
-  dayEl.addEventListener('change', changeSelectedDay);
-  startBtn.addEventListener('click', startScanner);
-  stopBtn.addEventListener('click', () => { stopScanner(); scannerHint.textContent = 'Camera stopped. Last result is retained.'; });
-  undoBtn.addEventListener('click', doUndo);
-  clearBtn.addEventListener('click', () => { clearStatus(); scannerHint.textContent = scanningWanted ? `Point the camera at a QR code for ${currentDay().name}.` : ''; });
-  searchDetails.addEventListener('toggle', () => { if (searchDetails.open) searchBox.focus(); });
-  searchForm.addEventListener('submit', event => { event.preventDefault(); doSearch(); });
-  refreshBtn.addEventListener('click', async () => {
-    attendanceFeedback.textContent = 'Refreshing…';
-    if (await loadTotals()) attendanceFeedback.textContent = 'Totals refreshed.';
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) return;
-    if (autoSelectEventDay()) { updateBadges(); renderTotals(); renderResults(lastSearchResults); }
-    if (pinReady) loadTotals();
-  });
-  setInterval(() => { if (!document.hidden && pinReady) loadTotals(); },60000);
+function stopScanner() {
+  scanningWanted = false;
+  if (restartTimeout) clearTimeout(restartTimeout);
+  restartTimeout = null;
+  scanner?.stop();
+  videoEl.style.display = 'none';
+  startBtn.classList.remove('hidden');
+  stopBtn.classList.add('hidden');
+  updateControlState();
+}
+function pauseScanner(hint) {
+  stopScanner();
+  startLabel.textContent = 'Scan next attendee';
+  scannerHint.textContent = hint || 'Review the result, then tap Scan next attendee.';
+  lastScannedToken = ''; // Allow immediate rescans if the previous scan did not succeed.
+}
+function setMutating(value) {
+  mutating = value;
+  updateControlState();
+}
+function saveLastCheckin(token, day, name, type, time) {
+  lastCheckin = {token, day, name, type, time};
+  localStorage.setItem(K('last_checkin'), JSON.stringify(lastCheckin));
+  updateControlState();
+}
+function setPendingVerification(token, day) {
+  pendingVerification = {token, day};
+  localStorage.setItem(K('pending_verification'), JSON.stringify(pendingVerification));
+  updateControlState();
+}
+function clearPendingVerification() {
+  pendingVerification = null;
+  localStorage.removeItem(K('pending_verification'));
+  updateControlState();
+}
+
+async function verifyPending(isAutomatic = false) {
+  if (!pendingVerification) return false;
+  const {token, day} = pendingVerification;
+  const manual = !isAutomatic;
+  if (manual && mutating) return false;
+  if (manual) setMutating(true);
+  try {
+    if (isAutomatic) await sleep(1400);
+    setConnection('busy', 'Verifying');
+    setStatus('status--info', 'Verifying last scan…', '', token);
+    const data = await apiCall({action: 'verify', token, day}, {timeoutMs: 18000});
+    if (data.status === 'busy') {
+      setConnection('attention', 'Verify again');
+      setStatus('status--warn', 'Reception is busy', '',
+        'Could not verify yet. Keep this badge and tap Verify last scan again.');
+      return false;
+    }
+    if (data.status !== 'ok') throw new Error(data.message || 'Verification unavailable.');
+    if (data.checkedIn) {
+      saveLastCheckin(token, day, data.name, data.type, data.time);
+      updateLocalSearchCheckin(token, day, data.time);
+      clearPendingVerification();
+      setConnection('ready');
+      setStatus('status--success', '✓ Check-in confirmed in Google Sheets',
+        `${data.name} (${data.type})`, `${data.day} · ${data.time}`);
+      return true;
+    }
+    setConnection('attention', 'Check required');
+    setStatus('status--warn', 'Check-in not confirmed yet',
+      data.found ? data.name : token,
+      'No timestamp was found at this check. The original request may still finish. Verify again shortly before retrying the badge.');
+    return false;
+  } catch (error) {
+    setConnection('attention', 'Connection issue');
+    setStatus('status--error', 'Unable to verify scan', '',
+      (error?.message || 'Connection problem.') + ' Keep this badge available and try Verify last scan again.');
+    return false;
+  } finally {
+    if (manual) setMutating(false);
+  }
+}
+
+async function checkinWithBusyRetry(token, day) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const data = await apiCall({action: 'checkin', token, day}, {timeoutMs: 28000});
+    if (data.status !== 'busy') return data;
+    if (attempt === 2) return data;
+    setConnection('retry', 'Reception busy');
+    setStatus('status--info', 'Reception is busy · retrying…', '',
+      `Another phone is updating the sheet. Attempt ${attempt + 2} of 3.`);
+    await sleep(Math.max(400, Number(data.retryAfterMs) || 600) + Math.floor(Math.random() * 500));
+  }
+  return {status: 'busy'};
+}
+async function doCheckin(token, requestedDay = dayEl.value) {
+  if (mutating || pendingVerification) return false;
+  setMutating(true);
+  setConnection('busy', 'Checking in');
+  let success = false;
+  try {
+    setStatus('status--info', 'Checking in…', '', token);
+    const data = await checkinWithBusyRetry(token, requestedDay);
+    if (data.status === 'checked_in' || data.status === 'checked_in_audit_warning') {
+      saveLastCheckin(token, requestedDay, data.name, data.type, data.time);
+      updateLocalSearchCheckin(token, requestedDay, data.time);
+      const isWarning = data.status === 'checked_in_audit_warning';
+      setConnection(isWarning ? 'attention' : 'ready', isWarning ? 'Audit review' : 'Ready');
+      setStatus(isWarning ? 'status--warn' : 'status--success',
+        isWarning ? '✓ Checked in · Audit warning' : '✓ Checked in',
+        `${data.name} (${data.type})`,
+        isWarning ? data.message : `${data.day} · ${data.time} · ${data.station}`);
+      if (navigator.vibrate) navigator.vibrate(100);
+      success = true;
+      // NO background totals or search request after every successful scan.
+    } else if (data.status === 'already_checked_in') {
+      updateLocalSearchCheckin(token, requestedDay, data.time);
+      setConnection('ready');
+      setStatus('status--warn', 'Already checked in', `${data.name} (${data.type})`,
+        `${data.day} · First check-in: ${data.time}. No changes made.`);
+    } else if (data.status === 'busy') {
+      setConnection('attention', 'Reception busy');
+      setStatus('status--warn', 'Reception is busy', '',
+        'All retry attempts were busy. No new check-in was made by these attempts. Scan this badge again.');
+    } else if (data.status === 'not_found') {
+      setConnection('ready');
+      setStatus('status--error', 'QR not recognized', '', 'Try again or search by name.');
+    } else if (data.status === 'incomplete_record') {
+      setConnection('ready');
+      setStatus('status--warn', 'Registration incomplete', '', data.message);
+    } else if (data.status === 'unauthorized') {
+      pinReady = false;
+      localStorage.removeItem(K('pin'));
+      showPinEditor('Re-enter the reception PIN.');
+      setConnection('idle', 'PIN needed');
+      setStatus('status--error', 'Invalid PIN', '', 'Edit the reception PIN to continue.');
+    } else {
+      // A server-side error might happen after a timestamp is written.
+      // Resolve it by READ, not by blindly writing again.
+      setPendingVerification(token, requestedDay);
+      success = await verifyPending(true);
+    }
+  } catch (error) {
+    // A network timeout does not mean Google didn't write the check-in.
+    setPendingVerification(token, requestedDay);
+    success = await verifyPending(true);
+    if (!success && connectionState !== 'attention') {
+      setConnection('attention', 'Verify scan');
+      setStatus('status--warn', 'Check-in outcome uncertain', '', error?.message || 'Verify this badge.');
+    }
+  } finally {
+    setMutating(false);
+  }
+  return success;
+}
+
+function updateLocalSearchCheckin(token, day, time) {
+  const key = DAYS[day]?.key;
+  if (!key) return;
+  const record = lastSearchResults.find(record => record.token === token);
+  if (record) { record[key + 'CheckedIn'] = true; record[key + 'Time'] = time || ''; }
+}
+
+function renderResults(results) {
+  lastSearchResults = results || [];
+  resultsEl.replaceChildren();
+  if (!lastSearchResults.length) {
+    if (searchBox.value.trim()) resultsEl.textContent = 'No matching attendee. Try another spelling or the badge token.';
+    return;
+  }
+  for (const r of lastSearchResults) {
+    const checked = !!r[currentDay().key + 'CheckedIn'];
+    const item = document.createElement('div');
+    item.className = 'result';
+    const times = Object.values(DAYS).map(day =>
+      `${day.name}: ${r[day.key + 'CheckedIn'] ? escapeHtml(r[day.key + 'Time']) : 'Not checked in'}`
+    ).join('<br>');
+    item.innerHTML = `<div class="result-top"><div><div class="result-name">${escapeHtml(r.name)} (${escapeHtml(r.type || '')})</div>` +
+      `<div class="result-sub">Token: ${escapeHtml(r.token)}<br>${times}</div></div>` +
+      `<span class="result-pill ${checked ? 'result-pill--ok' : 'result-pill--warn'}">${checked ? 'Checked in' : 'Not checked in'}</span></div>`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = checked ? 'btn btn--lg btn--state-active' : 'btn btn--lg btn--primary';
+    button.style.marginTop = 'var(--ds-space-3)';
+    button.textContent = checked ? `Already checked in for ${currentDay().name}` : `Check in for ${currentDay().name}`;
+    button.disabled = checked || mutating || !!pendingVerification;
+    const selectedDay = dayEl.value;
+    button.addEventListener('click', async () => {
+      if (scanningWanted) stopScanner();
+      button.disabled = true;
+      await doCheckin(r.token, selectedDay);
+      renderResults(lastSearchResults); // Show newest status after manual action by re-searching when needed.
+    });
+    item.appendChild(button);
+    resultsEl.appendChild(item);
+  }
+}
+async function doSearch() {
+  const query = searchBox.value.trim();
+  if (!query) { resultsEl.replaceChildren(); lastSearchResults = []; return; }
+  if (!pinReady || mutating) return;
+  searchBtn.disabled = true;
+  try {
+    setStatus('status--info', 'Searching…');
+    const data = await apiCall({action: 'search', query}, {timeoutMs: 15000});
+    if (data.status !== 'ok') throw new Error(data.message || 'Search failed.');
+    renderResults(data.results || []);
+    if (!pendingVerification) clearStatus();
+  } catch (error) {
+    setStatus('status--error', 'Search error', '', error?.message || 'Try again.');
+  } finally {
+    searchBtn.disabled = false;
+    updateControlState();
+  }
+}
+
+async function doUndo() {
+  if (mutating || pendingVerification || !lastCheckin?.token || lastCheckin.day !== dayEl.value) return;
+  const {token, day, name} = lastCheckin;
+  if (!confirm(`Undo ${name || token}'s ${DAYS[day].name} check-in?`)) return;
+  if (scanningWanted) stopScanner();
+  setMutating(true);
+  setConnection('busy', 'Undoing');
+  try {
+    setStatus('status--info', 'Undoing check-in…', name || token);
+    const data = await apiCall({action: 'undo', token, day}, {timeoutMs: 28000});
+    if (['undone', 'undone_audit_warning'].includes(data.status)) {
+      lastCheckin = null;
+      localStorage.removeItem(K('last_checkin'));
+      const warning = data.status === 'undone_audit_warning';
+      setConnection(warning ? 'attention' : 'ready');
+      setStatus(warning ? 'status--warn' : 'status--success', 'Check-in undone', data.name, data.message);
+    } else if (data.status === 'busy') {
+      setConnection('attention', 'Reception busy');
+      setStatus('status--warn', 'Reception is busy', data.name || '', 'Undo was not started. Try again.');
+    } else {
+      setConnection('attention', 'Check required');
+      setStatus('status--warn', 'Undo not confirmed', data.name || '', data.message || 'Review attendee record.');
+    }
+  } catch (error) {
+    setConnection('attention', 'Check required');
+    setStatus('status--warn', 'Undo outcome uncertain', '',
+      'Check the attendee record before retrying the undo. ' + (error?.message || ''));
+  } finally {
+    setMutating(false);
+  }
+}
+
+async function startScanner() {
+  if (!pinReady) { showPinEditor('Submit the reception PIN first.'); pinEl.focus(); return; }
+  if (scanBusy || mutating || scanningWanted || pendingVerification) return;
+  scanningWanted = true;
+  try {
+    if (!scanner) {
+      scanner = new QrScanner(videoEl, async result => {
+        if (!scanningWanted || scanBusy || mutating) return;
+        const token = String(result?.data || result || '').trim();
+        if (!token) return;
+        if (token === lastScannedToken && Date.now() - lastScannedAt < 6000) return;
+        lastScannedToken = token;
+        lastScannedAt = Date.now();
+        const capturedDay = dayEl.value;
+        scanBusy = true;
+        scanner.stop();
+        scannerHint.textContent = 'Processing QR…';
+        const success = await doCheckin(token, capturedDay);
+        if (!success) {
+          scanBusy = false;
+          pauseScanner(pendingVerification
+            ? 'Keep this attendee’s badge. Tap Verify last scan before proceeding.'
+            : 'Review the result. Tap Scan next attendee or open manual search.');
+          return;
+        }
+        restartTimeout = setTimeout(async () => {
+          restartTimeout = null;
+          if (!scanningWanted || pendingVerification) { scanBusy = false; return; }
+          try {
+            await scanner.start();
+            scannerHint.textContent = `Camera ready for next ${currentDay().name} attendee. Remove the previous badge from view.`;
+          } catch (error) {
+            pauseScanner('Camera could not restart. Tap Scan next attendee.');
+          } finally {
+            scanBusy = false;
+            updateControlState();
+          }
+        }, SCAN_RESTART_DELAY_MS);
+      });
+    }
+    videoEl.style.display = 'block';
+    startBtn.classList.add('hidden');
+    stopBtn.classList.remove('hidden');
+    scannerHint.textContent = 'Starting camera…';
+    await scanner.start();
+    scannerHint.textContent = `Point the camera at a QR code for ${currentDay().name}.`;
+  } catch (error) {
+    pauseScanner('Allow camera access and try again.');
+    setStatus('status--error', 'Camera error', '', 'Check camera permission, then tap Scan next attendee.');
+  }
+}
+function changeSelectedDay() {
+  if (pendingVerification) { dayEl.value = pendingVerification.day; return; }
+  if (scanningWanted) stopScanner();
+  localStorage.setItem(K('day'), dayEl.value);
+  localStorage.setItem(K('date_selected'), todayLocal());
+  updateBadges();
+  renderTotals();
+  renderResults(lastSearchResults);
+  clearStatus();
+  scannerHint.textContent = `Day changed to ${currentDay().name}. Start scanning when ready.`;
+}
+
+// Startup and event handlers.
+autoSelectEventDay();
+updateBadges();
+renderTotals();
+clearStatus();
+if (pendingVerification) {
+  setConnection('attention', 'Verify last scan');
+  setStatus('status--warn', 'Unconfirmed previous scan', '',
+    `Token ${pendingVerification.token} · ${DAYS[pendingVerification.day]?.name || 'Event day'}. Tap Verify last scan.`);
+}
+if (pinEl.value.trim()) {
+  pinSavedMessage.textContent = 'Checking stored PIN…';
+  showSavedPin();
+  void submitPin();
+} else {
+  showPinEditor();
+  updateControlState();
+}
+scheduleTotalsPolling();
+
+$('pinForm').addEventListener('submit', e => { e.preventDefault(); void submitPin(); });
+editPinBtn.addEventListener('click', () => {
+  if (scanningWanted) stopScanner();
+  pinReady = false;
+  updateControlState();
+  showPinEditor();
+  pinEl.focus();
+  pinEl.select();
+});
+stationEl.addEventListener('change', () => {
+  localStorage.setItem(K('station'), stationEl.value);
+  updateBadges();
+});
+dayEl.addEventListener('change', changeSelectedDay);
+startBtn.addEventListener('click', () => { void startScanner(); });
+stopBtn.addEventListener('click', () => {
+  stopScanner();
+  scannerHint.textContent = 'Camera stopped. Last result is retained.';
+});
+undoBtn.addEventListener('click', () => { void doUndo(); });
+verifyBtn.addEventListener('click', () => { void verifyPending(); });
+clearBtn.addEventListener('click', () => {
+  if (pendingVerification) {
+    if (!confirm('This check-in has NOT been confirmed. Keep the attendee’s badge or token for follow-up. Clear the warning anyway?')) return;
+    clearPendingVerification();
+    setConnection(pinReady ? 'ready' : 'idle');
+  }
+  clearStatus();
+  scannerHint.textContent = scanningWanted ? `Point the camera at a QR code for ${currentDay().name}.` : '';
+});
+searchDetails.addEventListener('toggle', () => { if (searchDetails.open) searchBox.focus(); });
+$('searchForm').addEventListener('submit', e => { e.preventDefault(); void doSearch(); });
+refreshBtn.addEventListener('click', async () => {
+  attendanceFeedback.textContent = 'Refreshing…';
+  if (await loadTotals()) attendanceFeedback.textContent = 'Totals refreshed.';
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (autoSelectEventDay()) { updateBadges(); renderTotals(); renderResults(lastSearchResults); }
+  if (pinReady && !mutating && !scanBusy && !pendingVerification) void loadTotals();
+});
+window.addEventListener('online', () => {
+  if (pendingVerification) scannerHint.textContent = 'Connection restored. Tap Verify last scan.';
+});
 </script>
 </body>
 </html>
